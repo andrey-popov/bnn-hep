@@ -145,25 +145,69 @@ void InputProcessor::BuildTrainingSet()
             nEventsTriedForTraining = eventsForTraining.size();
             
             
-            // Memorize the list of events tried for training to write it down later
-            auto &trainListCurSample = trainEventsIndices[sample.fileName];
-            trainListCurSample.reserve(trainListCurSample.size() + nEventsTriedForTraining);
-            trainListCurSample.insert(trainListCurSample.end(), eventsForTraining.begin(),
+            // Memorize the list of events tried for training to write it down later. There is no
+            //guarantee that this operation does not insert duplicates into the vector
+            auto &trainListCurFile = trainEventsIndices[sample.fileName];
+            trainListCurFile.reserve(trainListCurFile.size() + nEventsTriedForTraining);
+            trainListCurFile.insert(trainListCurFile.end(), eventsForTraining.begin(),
              eventsForTraining.end());
         }
         else
         // The user specified the desired number of events in the training set only
         {
-            // The tree will be read in a random way. Prepare a shuffled vector of indices to
-            //perform it
-            vector<unsigned long> eventsToRead(nEntries);
+            // A vector to define the order according to which the tree will be read
+            vector<unsigned long> eventsToRead;
+            eventsToRead.reserve(nEntries);
             
-            for (unsigned long i = 0; i < nEntries; ++i)
-                eventsToRead.at(i) = i;
             
-            std::random_shuffle(eventsToRead.begin(), eventsToRead.end(), RandomInt);
+            // The current source file might have already been read while processing one of the
+            //previous samples. It makes sense if only both signal and background events are
+            //taken from the same file with orthogonal selections. Since an event is marked to
+            //have been tried for training before the selection is evaluated, the same events
+            //should be tried again with the current event selection. Otherwise we waste events by
+            //marking them as tried for training and then ignoring because they fail signal or
+            //background selection
+            auto &trainListCurFile = trainEventsIndices[sample.fileName];
+            eventsToRead.insert(eventsToRead.end(), trainListCurFile.begin(),
+             trainListCurFile.end());
             
-            // Read the tree and fill the local training set
+            
+            // But there is no guarantee that the desired number of events will be found while
+            //looping over trainListCurFile. To deal with it, extend vector eventsToRead with a
+            //randomly shuffled vector off all indices that are not yet included in trainListCurFile
+            // First, find this complementary set of indices (note that trainListCurFile is ordered)
+            vector<unsigned long> untestedEvents;
+            untestedEvents.reserve(nEntries - trainListCurFile.size());
+            
+            
+            if (trainListCurFile.size() > 0)
+            {
+                for (unsigned index = 0; index < trainListCurFile.front(); ++index)
+                    untestedEvents.push_back(index);
+                
+                for (unsigned k = 0; k < trainListCurFile.size() - 1; ++k)
+                    for (unsigned index = trainListCurFile.at(k) + 1;
+                     index < trainListCurFile.at(k + 1); ++index)
+                        untestedEvents.push_back(index);
+                //^ The algorithm is tolerant to duplicates in trainListCurFile
+                
+                for (unsigned index = trainListCurFile.back() + 1; index < nEntries; ++index)
+                    untestedEvents.push_back(index);
+            }
+            else
+                for (unsigned index = 0; index < nEntries; ++index)
+                    untestedEvents.push_back(index);
+            
+            
+            // Shuffle the vector of complementary events
+            std::random_shuffle(untestedEvents.begin(), untestedEvents.end(), RandomInt);
+            
+            
+            // Extend the vector of reading order. Now it contains exactly nEntries events
+            eventsToRead.insert(eventsToRead.end(), untestedEvents.begin(), untestedEvents.end());
+            
+            
+            // Read the tree in the specified order and fill the local training set
             unsigned long nEntriesRead = 0;
             
             while (nEntriesRead < nEntries * sample.maxFractionTrainEvents and
@@ -184,11 +228,13 @@ void InputProcessor::BuildTrainingSet()
             nEventsTriedForTraining = nEntriesRead;
             
             
-            // Memorize the list of events tried for training to write it down later
-            auto &trainListCurSample = trainEventsIndices[sample.fileName];
-            trainListCurSample.reserve(trainListCurSample.size() + nEntriesRead);
-            trainListCurSample.insert(trainListCurSample.end(), eventsToRead.begin(),
-             eventsToRead.begin() + nEntriesRead);
+            // If needed, extend the list of events tried for training for the current source file
+            if (nEntriesRead > trainListCurFile.size())  // some of untestedEvents were read
+            {
+                trainListCurFile.reserve(nEntriesRead);
+                trainListCurFile.insert(trainListCurFile.end(), untestedEvents.begin(),
+                 untestedEvents.begin() + (nEntriesRead - trainListCurFile.size()));
+            }
         }
         
         
@@ -206,6 +252,11 @@ void InputProcessor::BuildTrainingSet()
         
         for (Event &event : localTrainingSet)
             event.weight *= weightCorrFactor;
+        
+        
+        // Sort the vector of indices of events tried for training
+        auto &trainListCurFile = trainEventsIndices[sample.fileName];
+        sort(trainListCurFile.begin(), trainListCurFile.end());
         
         
         // Now append the local training set to the global list
