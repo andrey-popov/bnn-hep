@@ -10,8 +10,12 @@
 #include <TFriendElement.h>
 
 #include <algorithm>
+#include <map>
 #include <sstream>
 #include <cstdio>
+
+
+using namespace std;
 
 
 unsigned InputProcessor::Event::nVars = 0;
@@ -46,9 +50,12 @@ void InputProcessor::BuildTrainingSet()
     vector<string> const &varNames = config.GetVariables();
     Event::nVars = varNames.size();
     
-    // Object to write the list of the events tried for the training set to a file
-    TrainEventList writeTrainEvents(config.GetTaskName() + "_trainEvents.txt",
-     TrainEventList::Mode::Write);
+    
+    // Prepare a map to store indices of events tried for training. It binds a vector with
+    //indices to source file's name. Note that the code can handle cases when the same source file
+    //appears several times
+    map<string, vector<unsigned long>> trainEventsIndices;
+    
     
     // Loop over all the input samples
     for (Config::Sample const &sample : config.GetSamples())
@@ -138,12 +145,14 @@ void InputProcessor::BuildTrainingSet()
             nEventsTriedForTraining = eventsForTraining.size();
             
             
-            // Write the list of event tried for training
-            writeTrainEvents.WriteList(sample.fileName, eventsForTraining.begin(),
+            // Memorize the list of events tried for training to write it down later
+            auto &trainListCurSample = trainEventsIndices[sample.fileName];
+            trainListCurSample.reserve(trainListCurSample.size() + nEventsTriedForTraining);
+            trainListCurSample.insert(trainListCurSample.end(), eventsForTraining.begin(),
              eventsForTraining.end());
         }
         else
-        // The used specified the desired number of events in the training set only
+        // The user specified the desired number of events in the training set only
         {
             // The tree will be read in a random way. Prepare a shuffled vector of indices to
             //perform it
@@ -175,8 +184,10 @@ void InputProcessor::BuildTrainingSet()
             nEventsTriedForTraining = nEntriesRead;
             
             
-            // Write the list of event tried for training
-            writeTrainEvents.WriteList(sample.fileName, eventsToRead.begin(),
+            // Memorize the list of events tried for training to write it down later
+            auto &trainListCurSample = trainEventsIndices[sample.fileName];
+            trainListCurSample.reserve(trainListCurSample.size() + nEntriesRead);
+            trainListCurSample.insert(trainListCurSample.end(), eventsToRead.begin(),
              eventsToRead.begin() + nEntriesRead);
         }
         
@@ -200,6 +211,17 @@ void InputProcessor::BuildTrainingSet()
         // Now append the local training set to the global list
         trainingSet.splice(trainingSet.end(), localTrainingSet);
     }
+    
+    
+    // Now write indices of events tried for training to a text file. First, create an object to
+    //manage the writing
+    TrainEventList writeTrainEvents(config.GetTaskName() + "_trainEvents.txt",
+     TrainEventList::Mode::Write);
+    
+    // Loop over the map with vectors of indices of events tried for training and write them to the
+    //file
+    for (auto const &val : trainEventsIndices)
+        writeTrainEvents.WriteList(val.first, val.second.begin(), val.second.end());
     
     
     // The weights should be additionally rescaled. One reason is that the combined p.d.f. in the
