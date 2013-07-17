@@ -55,18 +55,50 @@ void TrainEventList::WriteList(string const &sampleFileName,
         throw std::logic_error("TrainEventList::WriteList: Cannot write to file as it was opened "
          "for read access.");
     
+    
+    // Copy and sort the provided vector of indices
     vector<unsigned long> events(begin, end);
     std::sort(events.begin(), events.end());
     
+    
+    // Count duplicates
+    unsigned nDuplicates = 0;
+    unsigned long prevEvent = events.front();
+    
+    for (auto const &event : events)
+        if (event == prevEvent)
+            ++nDuplicates;
+        else
+            prevEvent = event;
+    
+    // The first event has been counted as a duplicate. Correct for it
+    --nDuplicates;
+    
+    
+    // Print a header for the current file
     string const shortFileName = sampleFileName.substr(sampleFileName.find_last_of('/') + 1);
     fileStream << "###########################################################################\n";
     fileStream << "# Name of the file\n" << shortFileName << "\n\n";
     
-    fileStream << "# Number of events\n" << events.size() << "\n\n";
+    fileStream << "# Number of events\n" << events.size() - nDuplicates << "\n\n";
     fileStream << "# Events tried for training\n";
     
-    for (auto const &event : events)
-        fileStream << event << " ";
+    
+    // Print the event indices. Filter out duplicates
+    prevEvent = events.front();
+    fileStream << prevEvent << " ";
+    
+    for (unsigned i = 1; i < events.size(); ++i)
+    {
+        auto const &event = events.at(i);
+        
+        if (event not_eq prevEvent)
+        {
+            fileStream << event << " ";
+            prevEvent = event;
+        }
+    }
+    
     
     fileStream << "\n\n\n";
     

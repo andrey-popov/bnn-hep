@@ -54,7 +54,7 @@ class TrainEventList
          * \param begin Iterator marking the starting point of the range.
          * \param end Iterator making the ending poing of the range.
          * 
-         * \note The list of events is sorted before writing to the file.
+         * \note The list of events is sorted before writing to the file. Duplicates are removed.
          */
         void WriteList(std::string const &sampleFileName,
          std::vector<unsigned long>::const_iterator const &begin,
