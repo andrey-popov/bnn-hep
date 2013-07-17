@@ -99,7 +99,7 @@ void TrainEventList::WriteList(string const &sampleFileName,
             prevEvent = event;
             ++nEventWritten;
             
-            if (nEventWritten % 50 == 0)
+            if (nEventWritten % 10 == 0)
                 fileStream << '\n';
         }
     }
