@@ -119,9 +119,9 @@ CodeMaker::CodeMaker(Logger &log_, Config const &config_, InputProcessor const &
     for (Config::Sample const &sample: config.GetSamples())
     {
         if (sample.type == 0)
-            file << "\tsgnFileNames.push_back(\"" << sample.fileName << "\");\n";
-        else
             file << "\tbkgFileNames.push_back(\"" << sample.fileName << "\");\n";
+        else
+            file << "\tsgnFileNames.push_back(\"" << sample.fileName << "\");\n";
     }
     
     file <<
