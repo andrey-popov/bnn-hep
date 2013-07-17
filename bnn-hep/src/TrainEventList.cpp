@@ -86,6 +86,7 @@ void TrainEventList::WriteList(string const &sampleFileName,
     
     // Print the event indices. Filter out duplicates
     prevEvent = events.front();
+    unsigned nEventWritten = 1;
     fileStream << prevEvent << " ";
     
     for (unsigned i = 1; i < events.size(); ++i)
@@ -96,6 +97,10 @@ void TrainEventList::WriteList(string const &sampleFileName,
         {
             fileStream << event << " ";
             prevEvent = event;
+            ++nEventWritten;
+            
+            if (nEventWritten % 50 == 0)
+                fileStream << '\n';
         }
     }
     
