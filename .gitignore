@@ -20,6 +20,7 @@
 bin/*
 bnn-hep/bnn-hep
 convenience/eventIndexToID
+convenience/eventIDToIndex
 mc/mc-ais
 mc/mc-reweight
 mc/mc-spec

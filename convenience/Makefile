@@ -11,9 +11,13 @@ vpath %.cpp src ../bnn-hep/src
 .PHONY: clean
 
 # The default rule
-all: eventIndexToID
+all: eventIndexToID eventIDToIndex
 
 eventIndexToID: eventIndexToID.o EventID.o TrainEventList.o
+	$(CC) $(LDFLAGS) $+ -o $@
+	@ cd ../bin; ln -sf ../convenience/$@; cd -
+
+eventIDToIndex: eventIDToIndex.o EventID.o TrainEventList.o
 	$(CC) $(LDFLAGS) $+ -o $@
 	@ cd ../bin; ln -sf ../convenience/$@; cd -
 
@@ -22,4 +26,4 @@ eventIndexToID: eventIndexToID.o EventID.o TrainEventList.o
 
 clean:
 	@ rm -f *.o
-	@ rm -f ../bin/eventIndexToID
+	@ rm -f ../bin/eventIndexToID ../bin/eventIDToIndex

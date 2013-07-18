@@ -76,7 +76,7 @@ int main(int argc, char const **argv)
     TrainEventList eventList(argv[1], TrainEventList::Mode::Read);
     
     
-    // Make a map to store a vector of event ID for each of provided files
+    // Make a map to store a vector of event IDs for each of provided ROOT files
     map<string, vector<EventID>> eventIDsAllFiles;
     
     
