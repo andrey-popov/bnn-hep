@@ -17,7 +17,9 @@
 *.app
 
 # A long list of executables
+bin/*
 bnn-hep/bnn-hep
+convenience/eventIndexToID
 mc/mc-ais
 mc/mc-reweight
 mc/mc-spec
