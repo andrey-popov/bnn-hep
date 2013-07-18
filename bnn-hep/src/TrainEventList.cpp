@@ -120,8 +120,9 @@ bool TrainEventList::ReadList(string const &sampleFileName)
         throw std::logic_error("TrainEventList::ReadList: Cannot read from file as it was opened "
          "for write access.");
     
-    // Set the get pointer to the beginning of the file
-    fileStream.seekg (0, std::ios::beg);
+    // Set the get pointer to the beginning of the file and reset possible EOF bit
+    fileStream.seekg(0, std::ios::beg);
+    fileStream.clear();  // sic!
     
     // Find the line that contains the sample file name
     string const shortFileName = sampleFileName.substr(sampleFileName.find_last_of('/') + 1);
