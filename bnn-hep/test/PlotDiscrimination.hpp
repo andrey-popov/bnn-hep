@@ -213,9 +213,9 @@ void PlotDiscrimination::FillHists(lstring const &fileNames, std::string const &
             Double_t const weight = weightFormula.EvalInstance();
             
             if (trainList.CheckEventExam(ev))
-                examHist.Fill(value, weight * examWeightFactor);
+                examHist.Fill(value, weight / examWeightFactor);
             else
-                trainHist.Fill(value, weight * (1. - examWeightFactor));
+                trainHist.Fill(value, weight / (1. - examWeightFactor));
         }
         
         
