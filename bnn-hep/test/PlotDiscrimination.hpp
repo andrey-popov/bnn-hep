@@ -189,7 +189,6 @@ void PlotDiscrimination::FillHists(lstring const &fileNames, std::string const &
         TFile file(fName->c_str());
         TTree *tree = dynamic_cast<TTree *>(file.Get(treeName.c_str()));
         long const nEntries = tree->GetEntries();
-        double const examWeightFactor = 1. - double(trainList.GetNEvents()) / nEntries;
         
         
         // Prepare the formulas
@@ -201,16 +200,38 @@ void PlotDiscrimination::FillHists(lstring const &fileNames, std::string const &
             formulas.push_back(new TTreeFormula(vName->c_str(), vName->c_str(), tree));
         
         
-        // Read the tree
+        // Calculate a factor to rescale weights. It is needed to account for removal of the
+        //training set
+        long const nEntriesNonZeroWeight = 0;
+        
         for (long ev = 0; ev < nEntries; ++ev)
         {
             tree->LoadTree(ev);
+            
+            if (weightFormula.EvalInstance() != 0.)
+                ++nEntriesNonZeroWeight;
+        }
+        
+        double const examWeightFactor = 1. - double(trainList.GetNEvents()) / nEntriesNonZeroWeight;
+        //^ Events in the training set have non-zero weights by construction
+        
+        
+        // Fill histograms with BNN output
+        for (long ev = 0; ev < nEntries; ++ev)
+        {
+            tree->LoadTree(ev);
+            
+            Double_t const weight = weightFormula.EvalInstance();
+            
+            if (weight == 0.)
+                continue;
+            
             
             for (unsigned i = 0; i < nVars; ++i)
                 inputs[i] = formulas[i]->EvalInstance();
             
             Double_t const value = discr(inputs);
-            Double_t const weight = weightFormula.EvalInstance();
+            
             
             if (trainList.CheckEventExam(ev))
                 examHist.Fill(value, weight / examWeightFactor);
