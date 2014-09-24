@@ -70,6 +70,7 @@ TrainEventList::TrainEventList(std::string const &fileName):
 bool TrainEventList::ReadEventList(std::string const &sampleFileName)
 {
     listRead = false;
+    eventsRead.clear();
     
     // Set the get pointer to the beginning of the file
     file.seekg (0, std::ios::beg);

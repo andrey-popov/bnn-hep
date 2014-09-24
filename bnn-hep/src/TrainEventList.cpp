@@ -114,6 +114,7 @@ void TrainEventList::WriteList(string const &sampleFileName,
 bool TrainEventList::ReadList(string const &sampleFileName)
 {
     listRead = false;
+    eventsRead.clear();
     
     
     if (mode != Mode::Read)
