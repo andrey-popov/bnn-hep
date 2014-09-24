@@ -1,9 +1,17 @@
+# Variables to work with Boost
+BOOST_INCLUDE = $(BOOST_ROOT)/include/boost-1_55
+BOOST_LIB = $(BOOST_ROOT)/lib
+BOOST_LIB_POSTFIX = -gcc47-mt-1_55
+
 # Define the flags to control make
 CC = g++
-INCLUDE = -Iinclude -I../libconfig/ -I$(shell root-config --incdir) -I/afs/cern.ch/sw/lcg/external/Boost/1.50.0_python2.7/x86_64-slc5-gcc46-opt/include/boost-1_50/
+INCLUDE = -Iinclude -I../libconfig/ -I$(shell root-config --incdir) -I$(BOOST_INCLUDE)
 OPFLAGS = 
-CFLAGS = -Wall -Wextra -std=c++11 $(INCLUDE) $(OPFLAGS)
-LDFLAGS = $(shell root-config --libs) -lTreePlayer -L/afs/cern.ch/sw/lcg/external/Boost/1.50.0_python2.7/x86_64-slc5-gcc46-opt/lib/ -lboost_filesystem-gcc46-mt-1_50 -lboost_system-gcc46-mt-1_50
+CFLAGS = -Wall -Wextra -Wno-unused-local-typedefs -std=c++11 $(INCLUDE) $(OPFLAGS)
+LDFLAGS = $(shell root-config --libs) -lTreePlayer \
+ -L$(BOOST_LIB) -lboost_filesystem$(BOOST_LIB_POSTFIX) -lboost_system$(BOOST_LIB_POSTFIX) \
+ -lboost_filesystem$(BOOST_LIB_POSTFIX) -lboost_system$(BOOST_LIB_POSTFIX) \
+ -Wl,-rpath=$(BOOST_LIB)
 EXECUTABLE = bnn-hep
 SOURCES = $(shell ls src/ | grep .cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
